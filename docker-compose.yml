@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: iot_data
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  producer:
+    build: ./producer
+    container_name: producer
+    depends_on:
+      - mqtt-broker
+
+  worker:
+    build: ./worker
+    container_name: worker
+    depends_on:
+      - redis
+      - mqtt-broker
+      - postgres
